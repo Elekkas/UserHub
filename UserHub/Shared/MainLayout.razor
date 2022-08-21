@@ -1,0 +1,42 @@
+﻿@using Authorization
+@inherits LayoutComponentBase
+
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
+
+<MudThemeProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudLink Href="/" Typo="Typo.h5" Color="Color.Inherit" Underline="Underline.None">UserHub</MudLink>
+        <MudIcon Class="ml-1" Icon="@Icons.Filled.Hub" />
+        <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <MudMenu Label="@context.User.Identity.Name" Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Filled.Person" EndIcon="@Icons.Filled.KeyboardArrowDown" FullWidth="true" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
+                    <MudMenuItem Href="/settings" >Settings</MudMenuItem>
+                    <MudMenuItem OnClick="LogoutAction">Logout</MudMenuItem>
+                </MudMenu>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Login" Href="/login">Login</MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudAppBar>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+
+@code 
+{
+    protected async Task LogoutAction()
+    {
+        await ((JWTAuthStateProvider)AuthProvider).UserLogOut();
+        NavigationManager.NavigateTo("/");
+    }  
+}   

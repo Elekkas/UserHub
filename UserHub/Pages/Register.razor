@@ -1,0 +1,160 @@
+﻿@page "/register"
+@using System.ComponentModel.DataAnnotations
+@using Authorization
+@using Authorization.Interfaces
+@using Blazored.LocalStorage
+@using EFDataAccessLibrary.DataAccess
+@using Microsoft.AspNetCore.Mvc
+@using UserHub.Models
+@using System.Text.RegularExpressions
+
+
+@inject IUserManagement UserService
+@inject IAccessToken TokenService
+@inject ILocalStorageService LocalStorageService
+@inject WebDatabaseContext  WebDatabaseContext
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>Register - UserHub</PageTitle>
+
+<MudGrid>
+        <MudPaper Class="pa-15 ma-2" Elevation="0" Width="100%">
+            <MudContainer MaxWidth="MaxWidth.Medium">
+                <MudCard Elevation="3" Class="pa-10">
+                    <MudText Color="Color.Dark" GutterBottom Typo="Typo.h3" Align="Align.Center">Register to UserHub</MudText>
+                    <MudForm Model="model">
+                            <MudTextField T="string" @bind-Value="model.Username"
+                                          Label="Username" Required="true"
+                                          Variant="Variant.Outlined"
+                                          Validation="@(new Func<string, string>(UsernameCheck))"
+                                          RequiredError="Username is required!"/>
+                            <MudTextField T="string" @bind-Value="model.Email"
+                                          Label="Email" Required="true"
+                                          Variant="Variant.Outlined"
+                                          RequiredError="Email is required!"
+                                          Validation="@(new Func<string, string>(EmailCheck))"/>
+                            <MudTextField T="string" @bind-Value="model.Password"
+                                          Label="Password"
+                                          Variant="Variant.Outlined"
+                                          @ref="pwField1"
+                                          InputType="InputType.Password"
+                                          Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))" Required="true"
+                                          RequiredError="Password is required!"/>
+                            <MudTextField T="string" @bind-Value="model.ConfirmPassword"
+                                          Label="Confirm Password"
+                                          Variant="Variant.Outlined"
+                                          InputType="InputType.Password"
+                                          Validation="@(new Func<string, string>(PasswordMatch))" Required="true"
+                                          RequiredError="Password confirmation is required!"/>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto mt-5" OnClick="OnValidSubmit">Register</MudButton>
+                    </MudForm>   
+                </MudCard>
+                @if (!success)
+                {
+                <MudAlert Class="mt-5" Severity="Severity.Error">Registration failed, please try again later.</MudAlert>
+                }
+                else if (isNameTaken)
+                {
+                <MudAlert Class="mt-5" Severity="Severity.Error">Username is already taken.</MudAlert>
+                }
+            </MudContainer>
+        </MudPaper>
+</MudGrid>
+
+
+@code {
+    RegisterAccountForm model = new RegisterAccountForm();
+    bool success = true;
+    bool isNameTaken = false;
+    MudTextField<string> pwField1;
+
+    protected async Task OnValidSubmit()
+    {
+        isNameTaken = WebDatabaseContext.Users.Any(x => x.UserName == model.Username);
+
+        if(isNameTaken)
+        {
+            return;
+        }
+
+        var result = await UserService.CreateUser(model.Username, model.Password, model.Email);
+
+        if (result != null)
+        {
+            await LocalStorageService.SetItemAsync("UserHubToken", TokenService.CreateAccessToken(result));
+            ((JWTAuthStateProvider)AuthProvider).UserAuthenticated(result);
+            NavigationManager.NavigateTo("/dashboard");
+        }
+        else
+        {
+            success = false;
+        }
+    }
+
+
+    private IEnumerable<string> PasswordStrength(string pw)
+    {
+        if (string.IsNullOrWhiteSpace(pw))
+        {
+            yield return "Password is required!";
+            yield break;
+        }
+        if (pw.Length > 70)
+            yield return "Password is too long";
+        if (pw.Length < 8)
+            yield return "Password must be at least of length 8";
+        if (!Regex.IsMatch(pw, @"[A-Z]"))
+            yield return "Password must contain at least one capital letter";
+        if (!Regex.IsMatch(pw, @"[a-z]"))
+            yield return "Password must contain at least one lowercase letter";
+        if (!Regex.IsMatch(pw, @"[0-9]"))
+            yield return "Password must contain at least one digit";
+    }
+
+    private string PasswordMatch(string arg)
+    {
+        if (pwField1.Value != arg)
+            return "Passwords don't match";
+        return null;
+    }
+
+    private string UsernameCheck(string arg)
+    {
+        if (string.IsNullOrWhiteSpace(arg))
+        {
+            return "Username is required!";
+        }
+        if (arg.Length > 50)
+            return "Username is too long";
+        return null;
+    }
+
+    private string EmailCheck(string arg)
+    {
+        if (string.IsNullOrWhiteSpace(arg))
+        {
+            return "Email is required!";
+        }
+
+        var email = new EmailAddressAttribute() { ErrorMessage = "The email address is invalid" };
+
+        if (!email.IsValid(arg))
+            return email.ErrorMessage;
+
+        if (arg.Length > 70)
+            return "Email is too long";
+        return null;
+    }
+
+    protected override async void OnInitialized()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/dashboard");
+        }
+    }
+}

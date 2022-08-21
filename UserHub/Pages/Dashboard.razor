@@ -1,0 +1,50 @@
+﻿@page "/dashboard"
+@attribute [Authorize]
+
+<PageTitle>Dashboard - UserHub</PageTitle>
+
+<MudContainer Class="mt-16">
+    <MudText Typo="Typo.h3" Style="font-weight:bold; font-size:100px;" Color="Color.Primary" Align="Align.Center" GutterBottom="true">Dashboard</MudText>
+    <MudGrid Class="mt-8">
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="0" Class="rounded-xl pb-4 mud-border-primary border-4 border-double">
+                <MudCardContent>
+                    <MudText Color="Color.Primary" Style="font-weight:bold;" Typo="Typo.h4" Align="Align.Center">Email</MudText>
+                    <div class="d-flex justify-center">
+                        <MudButton Color="Color.Primary" Class="rounded-xl">
+                            <MudIcon Style="font-size:10rem;" Icon="@Icons.Material.Filled.Email"></MudIcon>
+                        </MudButton>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="0" Class="rounded-xl pb-4 mud-border-primary border-4 border-double">
+                <MudCardContent>
+                    <MudText Color="Color.Primary" Style="font-weight:bold;" Typo="Typo.h4" Align="Align.Center">Chat</MudText>
+                    <div class="d-flex justify-center">
+                        <MudButton Href="/chatroom" Color="Color.Primary" Class="rounded-xl">
+                            <MudIcon Style="font-size:10rem;" Icon="@Icons.Material.Filled.Chat"></MudIcon>
+                        </MudButton>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="0" Class="rounded-xl pb-4 mud-border-primary border-4 border-double">
+                <MudCardContent>
+                    <MudText Color="Color.Primary" Style="font-weight:bold;" Typo="Typo.h4" Align="Align.Center">Notes</MudText>
+                    <div class="d-flex justify-center">
+                        <MudButton Color="Color.Primary" Class="rounded-xl">
+                            <MudIcon Style="font-size:10rem;" Icon="@Icons.Material.Filled.Notes"></MudIcon>
+                        </MudButton>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+
+}

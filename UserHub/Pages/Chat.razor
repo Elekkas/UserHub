@@ -1,0 +1,92 @@
+﻿@page "/chatroom"
+@attribute [Authorize]
+
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthProvider
+@implements IAsyncDisposable
+
+<PageTitle>ChatRoom - UserHub </PageTitle>
+
+
+<MudText Typo="Typo.h3" Class="mt-16" Style="font-weight:bold; font-size:100px;" Color="Color.Primary" Align="Align.Center" GutterBottom="true">ChatRoom</MudText>
+
+<MudPaper Height="700px" Width="100%" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Small">
+        <MudGrid Justify="Justify.Center" Spacing="1">
+            <MudItem xs="8">
+                <MudPaper Class="border-solid border-2 mud-border-primary pa-4" Elevation="0" Height="500px" Width="365px">
+                    @messages
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="4">
+                <MudPaper Class="border-solid border-2 mud-border-primary pa-4" Elevation="0" Height="500px">
+                    <MudText Typo="Typo.subtitle2">Users</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12">
+                    <MudTextField Class="border-solid border-2 mud-border-primary pa-4" Elevation="0" @bind-Value="message" OnKeyUp="HandleInput" Variant="Variant.Text" />
+                    <MudButton OnClick="Send" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary">Send</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</MudPaper>
+
+@code {
+    private HubConnection? hubConnection;
+    private string messages = string.Empty;
+    private string username = string.Empty;
+    private string message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        username = authState.User.Identity.Name;
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavManager.ToAbsoluteUri("chatroom"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        {
+            var msg = $"{(string.IsNullOrEmpty(user) ? "" : user + ": ")}{message}";
+            messages += msg + "\n";
+            StateHasChanged();
+        });
+
+        try
+        {
+            await hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+
+            throw;
+        }
+    }
+
+    private async Task Send()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("SendMessage", username, message);
+            message = string.Empty;
+        }
+    }
+
+    private async Task HandleInput(KeyboardEventArgs args)
+    {
+        if (args.Key.Equals("Enter"))
+        {
+            await Send();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
