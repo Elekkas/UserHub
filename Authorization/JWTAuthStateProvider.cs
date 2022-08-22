@@ -60,5 +60,10 @@ namespace Authorization
             await _localStorageService.RemoveItemAsync("UserHubToken");
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()))));
         }
+
+        public async Task<string> GetToken()
+        {
+            return await _localStorageService.GetItemAsync<string>("UserHubToken");
+        }
     }
 }

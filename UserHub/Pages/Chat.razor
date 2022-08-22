@@ -1,8 +1,12 @@
 ﻿@page "/chatroom"
+@using Authorization
+@using Authorization.Interfaces
 @attribute [Authorize]
 
 @inject NavigationManager NavManager
 @inject AuthenticationStateProvider AuthProvider
+@inject IAccessToken TokenService
+@inject IJSRuntime JSruntime
 @implements IAsyncDisposable
 
 <PageTitle>ChatRoom - UserHub </PageTitle>
@@ -12,46 +16,64 @@
 
 <MudPaper Height="700px" Width="100%" Elevation="0">
     <MudContainer MaxWidth="MaxWidth.Small">
-        <MudGrid Justify="Justify.Center" Spacing="1">
+        <MudGrid Justify="Justify.Center" Spacing="0">
             <MudItem xs="8">
-                <MudPaper Class="border-solid border-2 mud-border-primary pa-4" Elevation="0" Height="500px" Width="365px">
-                    @messages
+                <MudPaper @bind-ref="TextAreaRef" Class="overflow-y-scroll border-solid border-2 mud-border-primary pa-4" Elevation="0" Height="500px" Width="365px">
+                    @foreach (var message in messages)
+                    {
+                        <MudText>@message</MudText>
+                    }
                 </MudPaper>
             </MudItem>
             <MudItem xs="4">
                 <MudPaper Class="border-solid border-2 mud-border-primary pa-4" Elevation="0" Height="500px">
-                    <MudText Typo="Typo.subtitle2">Users</MudText>
+                    <MudText Style="font-weight:bold;" Typo="Typo.subtitle1">@($"Users ({users.Count})")</MudText>
+                    <MudDivider />
+                    @foreach (var user in users)
+                    {
+                        <MudText>@user</MudText>
+                    }
                 </MudPaper>
             </MudItem>
-            <MudItem xs="12">
-                    <MudTextField Class="border-solid border-2 mud-border-primary pa-4" Elevation="0" @bind-Value="message" OnKeyUp="HandleInput" Variant="Variant.Text" />
-                    <MudButton OnClick="Send" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary">Send</MudButton>
-            </MudItem>
+                <MudTextField Placeholder="Write something" Class="border-solid border-2 mud-border-primary" @bind-Value="message" OnKeyUp="HandleInput" Variant="Variant.Outlined" />
+                <MudButton Class="mt-1" OnClick="Send" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary">Send</MudButton>
         </MudGrid>
     </MudContainer>
 </MudPaper>
 
 @code {
     private HubConnection? hubConnection;
-    private string messages = string.Empty;
+    private List<string> messages = new();
+    private List<string> users = new();
     private string username = string.Empty;
     private string message = string.Empty;
+    private string token = string.Empty;
+    ElementReference TextAreaRef;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        username = authState.User.Identity.Name;
+        token = await ((JWTAuthStateProvider)AuthProvider).GetToken();
+        username = TokenService.GetName(token);
 
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavManager.ToAbsoluteUri("chatroom"))
+            .WithUrl(NavManager.ToAbsoluteUri($"/chatroom?username={username}"), options => {
+                options.AccessTokenProvider = () => Task.FromResult(token); })
             .WithAutomaticReconnect()
             .Build();
 
         hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
         {
             var msg = $"{(string.IsNullOrEmpty(user) ? "" : user + ": ")}{message}";
-            messages += msg + "\n";
-            StateHasChanged();
+            messages.Add(msg);
+            JSruntime.InvokeVoidAsync("scrollToBottom", TextAreaRef);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<List<string>>("ReceiveUserUpdate", (newUsers) =>
+        {
+            users.Clear();
+            users.AddRange(newUsers);
+            InvokeAsync(StateHasChanged);
         });
 
         try

@@ -1,13 +1,15 @@
 ﻿@page "/settings"
 @attribute [Authorize]
 
+@using Authorization
 @using Authorization.DataTransferObjects
+@using Authorization.Interfaces
 @using EFDataAccessLibrary.DataAccess
 @using EFDataAccessLibrary.Models
 @using System.Security.Claims
 
 @inject AuthenticationStateProvider AuthProvider
-@inject WebDatabaseContext webDatabase
+@inject IAccessToken TokenService
 
 <PageTitle>Settings - UserHub</PageTitle>
 
@@ -30,13 +32,13 @@
     protected string username;
     protected string email;
     protected string hashedPass = "Lorem Ipsum";
+    protected string token;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        username = authState.User.Identity.Name;
-
-        email = webDatabase.Users.Where(x => x.UserName == username).FirstOrDefault().Email;
+        token = await ((JWTAuthStateProvider)AuthProvider).GetToken();
+        username = TokenService.GetName(token);
+        email = TokenService.GetEmail(token);
     }
 
     protected async Task onChangeEmail()

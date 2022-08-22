@@ -47,7 +47,6 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 app.UseMvcWithDefaultRoute();
-
 app.MapBlazorHub();
 app.MapHub<ChatHub>("/chatroom");
 app.MapFallbackToPage("/_Host");
