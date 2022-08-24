@@ -1,3 +1,4 @@
+global using Email;
 using Authorization;
 using Authorization.Interfaces;
 using Blazored.LocalStorage;
@@ -23,6 +24,7 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ICryptography, Cryptography>();
 builder.Services.AddScoped<IUserManagement, UserManagement>();
 builder.Services.AddScoped<IAccessToken, AccessToken>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSignalR(options => options.EnableDetailedErrors = true);
 builder.Services.AddResponseCompression(options => {
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" });

@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Authorization\Authorization.csproj" />
     <ProjectReference Include="..\DataAccessLibrary\EFDataAccessLibrary.csproj" />
+    <ProjectReference Include="..\Email\Email.csproj" />
   </ItemGroup>
 
 </Project>

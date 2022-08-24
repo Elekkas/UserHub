@@ -1,0 +1,37 @@
+﻿@page "/email"
+
+@attribute [Authorize]
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
+@inject IEmailService Emailer
+
+<PageTitle>Email - UserHub</PageTitle>
+
+
+<MudGrid>
+    <MudPaper Class="pa-15 ma-2" Elevation="0" Width="100%">
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudCard Elevation="3" Class="pa-10">
+                <MudText Color="Color.Dark" GutterBottom Typo="Typo.h3" Align="Align.Center">Send Email from UserHub</MudText>
+                <MudForm Model="model">
+                        <MudTextField T="string" @bind-Value="model.To" Label="To" Variant="Variant.Outlined" Required="true" RequiredError="Recipient is required!"/>
+                        <MudTextField T="string" @bind-Value="model.Subject" Label="Subject" Variant="Variant.Outlined" Required="true" RequiredError="Subject is required!"/>
+                        <MudTextField T="string" @bind-Value="model.Body" Label="Body" Variant="Variant.Outlined" Required="true" RequiredError="Body is required!"/>
+                        <MudPaper Elevation="0" Class="ml-auto mt-5 d-flex justify-space-between">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="" OnClick="OnSend">Send</MudButton>
+                        </MudPaper>
+                </MudForm>   
+            </MudCard>
+        </MudContainer>
+    </MudPaper>
+</MudGrid>
+
+@code {
+    private EmailDto model = new EmailDto();
+
+    protected async Task OnSend()
+    {
+        Emailer.SendMail(model);
+    }
+
+}
